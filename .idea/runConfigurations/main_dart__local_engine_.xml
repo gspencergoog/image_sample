@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="main.dart (local engine)" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="additionalArgs" value="--local-engine-src-path $PROJECT_DIR$/../engine/src --local-engine=android_debug_unopt" />
+    <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
+    <method />
+  </configuration>
+</component>
