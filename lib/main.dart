@@ -6,7 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 void main() {
-  timeDilation = 1.0;
+  timeDilation = 10.0;
   runMyApp(new MyApp());
 }
 
@@ -61,7 +61,7 @@ class _BenchmarkBinding extends BindingBase with GestureBinding, ServicesBinding
   String reportResults() {
     Duration totalFrameTime = _lastBeginFrame.difference(_firstBeginFrame);
     Duration averageFrameTime = new Duration(milliseconds: totalFrameTime.inMilliseconds ~/ frameCount);
-    String result = 'Total frames $frameCount, average frame time: $averageFrameTime, time: $totalFrameTime';
+    String result = '${frameCount/2.0}\tTotal frames $frameCount, average frame time: $averageFrameTime, time: $totalFrameTime';
     _firstBeginFrame = null;
     _lastBeginFrame = null;
     frameCount = 0;
@@ -82,37 +82,46 @@ class CaptureImage extends StatefulWidget {
 
 class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixin<CaptureImage> {
   bool _hasAvatar = true;
+  bool _hasImageAvatar = true;
+  bool _hasDeleteButton = true;
   bool _enabled = true;
   static int _defaultChipCount = 1;
+  static bool _defaultSelected = false;
   int _numChips = _defaultChipCount;
-  List<bool> _selected = List<bool>.generate(_defaultChipCount, (int index) => false);
+  List<bool> _selected = List<bool>.generate(_defaultChipCount, (int index) => _defaultSelected);
 
   Widget makeMockChip(int index, Color color) {
-    return new Container(width: 60.0, height: 32.0, color: color);
+    return new Container(width: 100.0, height: 32.0, color: color);
   }
 
   Widget makeChip(int index) {
     return new Padding(
       padding: const EdgeInsets.all(8.0),
       child: new InputChip(
-        avatar: _hasAvatar ? new CircleAvatar(child: new Text('H')) : null,
+        avatar: _hasAvatar
+            ? new CircleAvatar(
+                backgroundImage: _hasImageAvatar ? AssetImage('assets/ali-connors.png') : null,
+                child: _hasImageAvatar ? null : const Text('H'),
+              )
+            : null,
         selected: _selected[index],
         onSelected: _enabled
             ? (bool value) {
                 setState(() {
+                  print('selected: $value');
                   _selected[index] = value;
                 });
               }
             : null,
-//        onDeleted: _enabled ? () {} : null,
+        onDeleted: _hasDeleteButton ? (_enabled ? () {} : null) : null,
         label: new Text('Hello'),
       ),
     );
   }
 
   void addAChip() {
-    _numChips ++;
-    _selected.add(false);
+    _numChips++;
+    _selected.add(_defaultSelected);
   }
 
   void _reset() {
@@ -188,19 +197,21 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
     themeController = new AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )..addListener(() {
+    )
+      ..addListener(() {
         setState(() {});
-      })..addStatusListener((AnimationStatus status) {
+      })
+      ..addStatusListener((AnimationStatus status) {
         if (status == AnimationStatus.completed) {
           String message = _BenchmarkBinding.instance.reportResults();
-          print('Chip count: $_numChips: $message');
-          if (_numChips < 25) {
-            addAChip();
-            themeController.value = 0.0;
-            themeController.forward();
-          }
+          print('Chip count:\t$_numChips\t$message');
+//          if (_numChips < 25) {
+//            addAChip();
+//            themeController.value = 0.0;
+//            themeController.forward();
+//          }
         }
-    });
+      });
   }
 
   Color _getColor() {
@@ -209,6 +220,15 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
       changeTween.evaluate(themeController),
       0.5,
       0.5,
+    ).toColor();
+  }
+
+  Color _getSelectColor() {
+    return new HSVColor.fromAHSV(
+      1.0,
+      changeTween.evaluate(themeController),
+      0.75,
+      0.75,
     ).toColor();
   }
 
@@ -227,7 +247,7 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
 //    );
 
     return new ChipTheme(
-      data: ChipTheme.of(context).copyWith(backgroundColor: _getColor()),
+      data: ChipTheme.of(context).copyWith(backgroundColor: _getColor(), selectedColor: _getSelectColor()),
       child: new Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
