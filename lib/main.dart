@@ -6,7 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 void main() {
-  timeDilation = 5.0;
+  timeDilation = 1.0;
   runMyApp(new MyApp());
 }
 
@@ -30,8 +30,6 @@ class _BenchmarkBinding extends BindingBase with GestureBinding, ServicesBinding
   @override
   void initInstances() {
     super.initInstances();
-    _lastBeginFrame = new DateTime.now();
-    _lastDrawFrame = new DateTime.now();
   }
 
   /// The current [_DiagramFlutterBinding], if one has been created.
@@ -42,22 +40,32 @@ class _BenchmarkBinding extends BindingBase with GestureBinding, ServicesBinding
 
   static _BenchmarkBinding _instance;
   DateTime _lastBeginFrame;
-  DateTime _lastDrawFrame;
+  DateTime _firstBeginFrame;
+  int frameCount = 0;
 
   @override
   void handleBeginFrame(Duration rawTimeStamp) {
+    if (_firstBeginFrame == null) {
+      _firstBeginFrame = new DateTime.now();
+    }
     super.handleBeginFrame(rawTimeStamp);
-    DateTime newTime = new DateTime.now();
-//    print('BEGIN: ${newTime.difference(_lastBeginFrame)} $rawTimeStamp');
-    _lastBeginFrame = newTime;
+    _lastBeginFrame = new DateTime.now();
   }
 
   @override
   void handleDrawFrame() {
     super.handleDrawFrame();
-    DateTime newTime = new DateTime.now();
-//    print('DRAW: ${newTime.difference(_lastDrawFrame)}');
-    _lastDrawFrame = newTime;
+    frameCount++;
+  }
+
+  String reportResults() {
+    Duration totalFrameTime = _lastBeginFrame.difference(_firstBeginFrame);
+    Duration averageFrameTime = new Duration(milliseconds: totalFrameTime.inMilliseconds ~/ frameCount);
+    String result = 'Total frames $frameCount, average frame time: $averageFrameTime, time: $totalFrameTime';
+    _firstBeginFrame = null;
+    _lastBeginFrame = null;
+    frameCount = 0;
+    return result;
   }
 }
 
@@ -75,9 +83,13 @@ class CaptureImage extends StatefulWidget {
 class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixin<CaptureImage> {
   bool _hasAvatar = true;
   bool _enabled = true;
-  static int _defaultChipCount = 20;
+  static int _defaultChipCount = 1;
   int _numChips = _defaultChipCount;
   List<bool> _selected = List<bool>.generate(_defaultChipCount, (int index) => false);
+
+  Widget makeMockChip(int index, Color color) {
+    return new Container(width: 60.0, height: 32.0, color: color);
+  }
 
   Widget makeChip(int index) {
     return new Padding(
@@ -92,10 +104,15 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
                 });
               }
             : null,
-        onDeleted: _enabled ? () {} : null,
+//        onDeleted: _enabled ? () {} : null,
         label: new Text('Hello'),
       ),
     );
+  }
+
+  void addAChip() {
+    _numChips ++;
+    _selected.add(false);
   }
 
   void _reset() {
@@ -151,10 +168,7 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
             ),
             new RaisedButton(
               onPressed: () async {
-                setState(() {
-                  ++_numChips;
-                  _selected.add(false);
-                });
+                setState(addAChip);
               },
               child: const Text('+'),
             ),
@@ -176,7 +190,17 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
       duration: const Duration(seconds: 2),
     )..addListener(() {
         setState(() {});
-      });
+      })..addStatusListener((AnimationStatus status) {
+        if (status == AnimationStatus.completed) {
+          String message = _BenchmarkBinding.instance.reportResults();
+          print('Chip count: $_numChips: $message');
+          if (_numChips < 25) {
+            addAChip();
+            themeController.value = 0.0;
+            themeController.forward();
+          }
+        }
+    });
   }
 
   Color _getColor() {
@@ -194,6 +218,14 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
       themeController.forward();
       _firstBuild = false;
     }
+//    return new Column(
+//      mainAxisAlignment: MainAxisAlignment.center,
+//      children: <Widget>[
+//        new Wrap(children: new List<Widget>.generate(_numChips, (int index) => makeMockChip(index, _getColor()))),
+//        //_createControls(),
+//      ],
+//    );
+
     return new ChipTheme(
       data: ChipTheme.of(context).copyWith(backgroundColor: _getColor()),
       child: new Column(
