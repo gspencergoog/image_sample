@@ -430,5 +430,5 @@ packages:
     source: hosted
     version: "2.1.13"
 sdks:
-  dart: ">=2.0.0-dev.28.0 <=2.0.0-edge.af1436931b93e755d38223c487d33a0a1f5eadf5"
+  dart: ">=2.0.0-dev.28.0 <=2.0.0-edge.fe606f890b0a311da802c78b0af414a3c2087a79"
   flutter: ">=0.1.4 <2.0.0"

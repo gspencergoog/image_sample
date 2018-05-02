@@ -6,7 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 void main() {
-  timeDilation = 10.0;
+  timeDilation = 1.0;
   runMyApp(new MyApp());
 }
 
@@ -114,7 +114,7 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
               }
             : null,
         onDeleted: _hasDeleteButton ? (_enabled ? () {} : null) : null,
-        label: new Text('Hello'),
+        label: new Text('Hello', textScaleFactor: 1.0,),
       ),
     );
   }
@@ -190,6 +190,7 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
   AnimationController themeController;
   Tween<double> changeTween = new Tween<double>(begin: 0.0, end: 360.0);
   bool _firstBuild = true;
+  bool _treePrinted = false;
 
   @override
   void initState() {
@@ -205,11 +206,16 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
         if (status == AnimationStatus.completed) {
           String message = _BenchmarkBinding.instance.reportResults();
           print('Chip count:\t$_numChips\t$message');
-//          if (_numChips < 25) {
-//            addAChip();
-//            themeController.value = 0.0;
-//            themeController.forward();
-//          }
+          if (_numChips < 25) {
+            addAChip();
+            themeController.value = 0.0;
+            themeController.forward();
+//          } else {
+//            if (!_treePrinted) {
+//              debugDumpRenderTree();
+//              _treePrinted = true;
+//            }
+          }
         }
       });
   }
@@ -248,13 +254,15 @@ class CaptureImageState extends State<CaptureImage> with TickerProviderStateMixi
 
     return new ChipTheme(
       data: ChipTheme.of(context).copyWith(backgroundColor: _getColor(), selectedColor: _getSelectColor()),
-      child: new Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          new Wrap(children: new List<Widget>.generate(_numChips, (int index) => makeChip(index))),
-          //_createControls(),
-        ],
-      ),
+//      child: new Opacity(opacity: 0.5,
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            new Wrap(children: new List<Widget>.generate(_numChips, (int index) => makeChip(index))),
+            //_createControls(),
+          ],
+        ),
+//      ),
     );
   }
 }
